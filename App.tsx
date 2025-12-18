@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   ScreenplayState, 
   FinalReport,
@@ -66,6 +66,12 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem(DRAFT_KEY, JSON.stringify(state));
   }, [state]);
+
+  // 自动调整高度的函数
+  const handleAutoResize = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    e.target.style.height = 'auto';
+    e.target.style.height = `${e.target.scrollHeight}px`;
+  };
 
   const saveToHistory = (report: FinalReport) => {
     const dateKey = new Date().toISOString().split('T')[0];
@@ -415,8 +421,10 @@ const App: React.FC = () => {
     const handleNextStep = () => setCurrentStep(s => Math.min(5, s + 1));
     const currentAct = ACT_TITLES[currentStep] || { title: "", desc: "" };
     const labelStyle = "font-industrial text-[12px] text-gray-800 font-black tracking-[0.2em] uppercase block mb-1";
-    const inputAreaStyle = "w-full input-line py-2 text-lg font-bold placeholder:text-gray-400 text-[#333] resize-none overflow-hidden min-h-[44px]";
-    const textareaStyle = "w-full input-line py-3 h-28 resize-none placeholder:text-gray-400 text-base leading-relaxed text-[#333]";
+    
+    // 更新输入框样式：移除 overflow-hidden，允许自动调整高度
+    const inputAreaStyle = "w-full input-line py-2 text-lg font-bold placeholder:text-gray-400 text-[#333] resize-none min-h-[44px] h-auto overflow-y-visible";
+    const textareaStyle = "w-full input-line py-3 resize-none placeholder:text-gray-400 text-base leading-relaxed text-[#333] min-h-[112px] h-auto overflow-y-visible";
 
     if (currentStep === 5) {
       return (
@@ -506,9 +514,12 @@ const App: React.FC = () => {
                   <textarea 
                     placeholder="输入名场面..." 
                     className={inputAreaStyle} 
-                    rows={2}
+                    rows={1}
                     value={(state.act1 as any)[`high${i}`]} 
-                    onChange={(e) => setState(s => ({ ...s, act1: { ...s.act1, [`high${i}`]: e.target.value } }))} 
+                    onInput={handleAutoResize}
+                    onChange={(e) => {
+                      setState(s => ({ ...s, act1: { ...s.act1, [`high${i}`]: e.target.value } }));
+                    }} 
                   />
                 </div>
               ))}
@@ -518,17 +529,38 @@ const App: React.FC = () => {
           {currentStep === 1 && (
             <div className="space-y-10">
               <div className="space-y-2 group">
-                <label className={`${labelStyle} group-focus-within:text-[#8b947e] transition-colors`}>场记单</label><textarea className={textareaStyle} placeholder="焦虑或挫败的事实..." value={state.act2.fact} onChange={(e) => setState(s => ({ ...s, act2: { ...s.act2, fact: e.target.value } }))} />
+                <label className={`${labelStyle} group-focus-within:text-[#8b947e] transition-colors`}>场记单</label>
+                <textarea 
+                  className={textareaStyle} 
+                  placeholder="焦虑或挫败的事实..." 
+                  value={state.act2.fact} 
+                  onInput={handleAutoResize}
+                  onChange={(e) => setState(s => ({ ...s, act2: { ...s.act2, fact: e.target.value } }))} 
+                />
               </div>
               <div className="space-y-2 group">
-                <label className={`${labelStyle} group-focus-within:text-[#8b947e] transition-colors`}>编剧笔记</label><textarea className={`${textareaStyle} italic font-serif`} placeholder="外部冲突还是内部矛盾？" value={state.act2.notes} onChange={(e) => setState(s => ({ ...s, act2: { ...s.act2, notes: e.target.value } }))} />
+                <label className={`${labelStyle} group-focus-within:text-[#8b947e] transition-colors`}>编剧笔记</label>
+                <textarea 
+                  className={`${textareaStyle} italic font-serif`} 
+                  placeholder="外部冲突还是内部矛盾？" 
+                  value={state.act2.notes} 
+                  onInput={handleAutoResize}
+                  onChange={(e) => setState(s => ({ ...s, act2: { ...s.act2, notes: e.target.value } }))} 
+                />
               </div>
             </div>
           )}
 
           {currentStep === 2 && (
             <div className="space-y-2 group">
-              <label className={`${labelStyle} group-focus-within:text-[#8b947e] transition-colors`}>素材</label><textarea className="w-full input-line py-3 h-48 resize-none text-2xl font-serif italic placeholder:text-gray-400 leading-relaxed text-[#333]" placeholder="记录令你感激的小事..." value={state.act3.gratitude} onChange={(e) => setState(s => ({ ...s, act3: { ...s.act3, gratitude: e.target.value } }))} />
+              <label className={`${labelStyle} group-focus-within:text-[#8b947e] transition-colors`}>素材</label>
+              <textarea 
+                className="w-full input-line py-3 resize-none text-2xl font-serif italic placeholder:text-gray-400 leading-relaxed text-[#333] h-auto overflow-y-visible" 
+                placeholder="记录令你感激的小事..." 
+                value={state.act3.gratitude} 
+                onInput={handleAutoResize}
+                onChange={(e) => setState(s => ({ ...s, act3: { ...s.act3, gratitude: e.target.value } }))} 
+              />
             </div>
           )}
 
@@ -554,11 +586,17 @@ const App: React.FC = () => {
                     <div key={idx} className="space-y-4 page-transition pt-6 border-t border-black/5 group/entry">
                       <div className="text-[11px] text-gray-600 italic border-l-2 border-[#8b947e] pl-4 bg-black/[0.01] py-3 rounded-r-lg group-hover/entry:bg-[#8b947e]/5 transition-colors">{DIRECTOR_TIPS[idx]?.description || ""}</div>
                       <label className={`${labelStyle} group-focus-within/entry:text-[#8b947e]`}>{DIRECTOR_TIPS[idx]?.title || "剖析"}</label>
-                      <textarea className="w-full input-line py-3 h-32 resize-none placeholder:text-gray-400 text-base font-medium leading-relaxed text-[#333]" placeholder="开始你的深度剖析..." value={state.act4.entries[idx]} onChange={(e) => {
-                        const newEntries = { ...state.act4.entries };
-                        newEntries[idx] = e.target.value;
-                        setState(s => ({ ...s, act4: { entries: newEntries } }));
-                      }} />
+                      <textarea 
+                        className="w-full input-line py-3 resize-none placeholder:text-gray-400 text-base font-medium leading-relaxed text-[#333] h-auto overflow-y-visible min-h-[128px]" 
+                        placeholder="开始你的深度剖析..." 
+                        value={state.act4.entries[idx]} 
+                        onInput={handleAutoResize}
+                        onChange={(e) => {
+                          const newEntries = { ...state.act4.entries };
+                          newEntries[idx] = e.target.value;
+                          setState(s => ({ ...s, act4: { entries: newEntries } }));
+                        }} 
+                      />
                     </div>
                   );
                 })}
@@ -574,8 +612,9 @@ const App: React.FC = () => {
                   <textarea 
                     placeholder="设定通关标准..." 
                     className={inputAreaStyle} 
-                    rows={2}
+                    rows={1}
                     value={(state.act5 as any)[`goal${i}`]} 
+                    onInput={handleAutoResize}
                     onChange={(e) => setState(s => ({ ...s, act5: { ...s.act5, [`goal${i}`]: e.target.value } }))} 
                   />
                 </div>
