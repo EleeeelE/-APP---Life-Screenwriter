@@ -4,17 +4,16 @@ import {
   ScreenplayState, 
   FinalReport,
   SavedReview 
-} from './types';
+} from './types.ts';
 import { 
   ACT_TITLES, 
   DIRECTOR_TIPS 
-} from './constants';
-import { generateFinalAudit } from './geminiService';
+} from './constants.tsx';
+import { generateFinalAudit } from './geminiService.ts';
 
 const DRAFT_KEY = 'life_screenwriter_draft_v1';
 const HISTORY_KEY = 'life_screenwriter_history_v1';
 
-// 默认状态模版，用于数据合并
 const DEFAULT_STATE: ScreenplayState = {
   act1: { high1: '', high2: '', high3: '' },
   act2: { fact: '', notes: '' },
@@ -30,15 +29,12 @@ const App: React.FC = () => {
   const [history, setHistory] = useState<Record<string, SavedReview>>({});
   const [viewingReview, setViewingReview] = useState<SavedReview | null>(null);
 
-  // 初始化状态，确保所有字段都存在
   const [state, setState] = useState<ScreenplayState>(DEFAULT_STATE);
 
   const todayKey = new Date().toISOString().split('T')[0];
   const hasTodayReview = !!history[todayKey];
 
-  // 强化版数据加载逻辑
   useEffect(() => {
-    // 1. 加载历史记录
     const savedHistory = localStorage.getItem(HISTORY_KEY);
     if (savedHistory) {
       try {
@@ -48,17 +44,13 @@ const App: React.FC = () => {
       }
     }
 
-    // 2. 加载草稿并进行防御性合并
     const savedDraft = localStorage.getItem(DRAFT_KEY);
     if (savedDraft) {
       try {
         const parsedDraft = JSON.parse(savedDraft);
-        // 关键逻辑：将默认状态作为基底，覆盖上已保存的数据
-        // 这样即使代码里新增了 act6，旧数据里没有 act6，合并后也会有 act6 的初始值，不会报错
         setState(prev => ({
           ...DEFAULT_STATE,
           ...parsedDraft,
-          // 深度合并对象字段
           act1: { ...DEFAULT_STATE.act1, ...(parsedDraft.act1 || {}) },
           act2: { ...DEFAULT_STATE.act2, ...(parsedDraft.act2 || {}) },
           act3: { ...DEFAULT_STATE.act3, ...(parsedDraft.act3 || {}) },
@@ -410,7 +402,7 @@ const App: React.FC = () => {
                   </button>
                 ))}
               </div>
-              {(!state.act4.entries || Object.keys(state.act4.entries).length === 0) && <div className="text-center py-10 text-gray-400 font-industrial text-xs tracking-widest">请选择剧作锦囊进行深度拆解（可多选）</div>}
+              {(!state.act4.entries || Object.keys(state.act4.entries).length === 0) && <div className="text-center py-10 text-gray-400 font-industrial text-xs tracking-widest">请点击上方锦囊进行拆解（可多选）</div>}
               <div className="space-y-12">
                 {state.act4.entries && Object.keys(state.act4.entries).map((key) => {
                   const idx = parseInt(key);

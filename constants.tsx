@@ -16,7 +16,7 @@ export const ACT_TITLES = [
   },
   {
     title: "第四幕：导演剪辑版剖析 (Director’s Commentary)",
-    desc: "从以下六个“剧作锦囊”中选择，深度拆解今天的叙事逻辑。"
+    desc: "点击以下“剧作锦囊”进行深度拆解。你可以根据需要选择一个或多个进行分析。"
   },
   {
     title: "第五幕：明日拍摄通告 (Tomorrow’s Call Sheet)",
