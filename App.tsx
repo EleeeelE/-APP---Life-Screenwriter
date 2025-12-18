@@ -68,10 +68,22 @@ const App: React.FC = () => {
   }, [state]);
 
   // 自动调整高度的函数
-  const handleAutoResize = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    e.target.style.height = 'auto';
-    e.target.style.height = `${e.target.scrollHeight}px`;
+  const handleAutoResize = (e: React.ChangeEvent<HTMLTextAreaElement> | React.UIEvent<HTMLTextAreaElement>) => {
+    const target = e.target as HTMLTextAreaElement;
+    target.style.height = 'auto';
+    target.style.height = `${target.scrollHeight}px`;
   };
+
+  // 渲染后立即调整所有可见 textarea 的高度（处理重写或载入草稿时的情况）
+  useEffect(() => {
+    if (view === 'editor') {
+      const textareas = document.querySelectorAll('textarea');
+      textareas.forEach(ta => {
+        ta.style.height = 'auto';
+        ta.style.height = `${ta.scrollHeight}px`;
+      });
+    }
+  }, [view, currentStep, state.act4.entries]);
 
   const saveToHistory = (report: FinalReport) => {
     const dateKey = new Date().toISOString().split('T')[0];
@@ -305,13 +317,11 @@ const App: React.FC = () => {
           </div>
         </header>
 
-        {/* 高端分级卡片风格：更紧凑的黑金/军绿限量版设计 */}
+        {/* 高端分级卡片风格 */}
         <div className="relative overflow-hidden rounded-[24px] bg-gradient-to-br from-[#2d3329] to-[#1a1f18] text-white shadow-2xl group border border-[#8b947e]/30 transition-all duration-700 hover:shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-          {/* 精致的背景纹理 */}
           <div className="absolute top-0 right-0 w-48 h-48 bg-[#8b947e]/5 blur-[60px] rounded-full group-hover:scale-150 transition-transform duration-1000"></div>
           
           <div className="relative p-8 md:p-10 flex flex-col gap-10">
-            {/* 上部：标题与分级 */}
             <div className="flex justify-between items-start">
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
@@ -329,7 +339,6 @@ const App: React.FC = () => {
               </div>
             </div>
 
-            {/* 下部：数据指标 - 采用类似金融卡片的磁条/排版设计 */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 pt-8 border-t border-white/5 relative">
               <div className="grid grid-cols-3 gap-10 md:gap-14">
                 <div className="transition-all duration-500 group-hover:translate-y-[-2px]">
@@ -348,7 +357,6 @@ const App: React.FC = () => {
                 </div>
               </div>
 
-              {/* 卡片边角的微缩文字装饰 */}
               <div className="flex flex-col items-end opacity-20 font-industrial text-[7px] tracking-[0.5em] font-bold pb-1">
                  <div>AUTH: STUDIO EDITION</div>
                  <div className="mt-1">SN: {date.replace(/-/g, '')}-REEL</div>
@@ -422,9 +430,9 @@ const App: React.FC = () => {
     const currentAct = ACT_TITLES[currentStep] || { title: "", desc: "" };
     const labelStyle = "font-industrial text-[12px] text-gray-800 font-black tracking-[0.2em] uppercase block mb-1";
     
-    // 更新输入框样式：移除 overflow-hidden，允许自动调整高度
-    const inputAreaStyle = "w-full input-line py-2 text-lg font-bold placeholder:text-gray-400 text-[#333] resize-none min-h-[44px] h-auto overflow-y-visible";
-    const textareaStyle = "w-full input-line py-3 resize-none placeholder:text-gray-400 text-base leading-relaxed text-[#333] min-h-[112px] h-auto overflow-y-visible";
+    // 输入框样式：确保高度自动撑开且滚动条不可见
+    const inputAreaStyle = "w-full input-line py-2 text-lg font-bold placeholder:text-gray-400 text-[#333] resize-none min-h-[44px] h-auto overflow-hidden";
+    const textareaStyle = "w-full input-line py-3 resize-none placeholder:text-gray-400 text-base leading-relaxed text-[#333] min-h-[112px] h-auto overflow-hidden";
 
     if (currentStep === 5) {
       return (
@@ -555,7 +563,7 @@ const App: React.FC = () => {
             <div className="space-y-2 group">
               <label className={`${labelStyle} group-focus-within:text-[#8b947e] transition-colors`}>素材</label>
               <textarea 
-                className="w-full input-line py-3 resize-none text-2xl font-serif italic placeholder:text-gray-400 leading-relaxed text-[#333] h-auto overflow-y-visible" 
+                className="w-full input-line py-3 resize-none text-2xl font-serif italic placeholder:text-gray-400 leading-relaxed text-[#333] h-auto overflow-hidden" 
                 placeholder="记录令你感激的小事..." 
                 value={state.act3.gratitude} 
                 onInput={handleAutoResize}
@@ -587,7 +595,7 @@ const App: React.FC = () => {
                       <div className="text-[11px] text-gray-600 italic border-l-2 border-[#8b947e] pl-4 bg-black/[0.01] py-3 rounded-r-lg group-hover/entry:bg-[#8b947e]/5 transition-colors">{DIRECTOR_TIPS[idx]?.description || ""}</div>
                       <label className={`${labelStyle} group-focus-within/entry:text-[#8b947e]`}>{DIRECTOR_TIPS[idx]?.title || "剖析"}</label>
                       <textarea 
-                        className="w-full input-line py-3 resize-none placeholder:text-gray-400 text-base font-medium leading-relaxed text-[#333] h-auto overflow-y-visible min-h-[128px]" 
+                        className="w-full input-line py-3 resize-none placeholder:text-gray-400 text-base font-medium leading-relaxed text-[#333] h-auto overflow-hidden min-h-[128px]" 
                         placeholder="开始你的深度剖析..." 
                         value={state.act4.entries[idx]} 
                         onInput={handleAutoResize}
