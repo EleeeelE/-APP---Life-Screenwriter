@@ -108,6 +108,14 @@ const App: React.FC = () => {
     }
   };
 
+  const handleRewrite = () => {
+    if (viewingReview) {
+      setState(viewingReview.state);
+      setView('editor');
+      setCurrentStep(0);
+    }
+  };
+
   const renderHome = () => (
     <div className="fixed inset-0 bg-[#8b947e] flex flex-col items-center justify-center z-[100] page-transition overflow-hidden">
       <button 
@@ -115,35 +123,35 @@ const App: React.FC = () => {
         className="typewriter-white relative w-full max-w-[540px] aspect-square flex flex-col items-center justify-center outline-none mt-24"
       >
         <div className="paper-sheet paper-anim absolute top-[-60px] w-72 h-80 z-10 flex flex-col items-center p-10 pt-20 text-[#333] border border-black/5 bg-white">
-           <div className="font-industrial text-[34px] font-black leading-none tracking-tighter mb-2 text-black/80">LIFE</div>
-           <div className="font-industrial text-[34px] font-black leading-none tracking-tighter text-black/80">SCREENWRITER</div>
+           <div className="font-industrial text-[34px] font-black leading-none tracking-tighter mb-2 text-black/80 transition-all duration-500 hover:tracking-[0.2em]">LIFE</div>
+           <div className="font-industrial text-[34px] font-black leading-none tracking-tighter text-black/80 transition-all duration-500 hover:tracking-[0.2em]">SCREENWRITER</div>
            <div className="h-[2px] w-14 bg-black/10 my-8"></div>
            <div className="font-industrial text-[10px] opacity-25 tracking-[0.5em] font-bold">CHAPTER ONE</div>
            <div className="mt-auto opacity-[0.03] pb-10">
               <i className="fas fa-quote-right text-[120px]"></i>
            </div>
         </div>
-        <div className="typewriter-chassis relative mt-40 w-[460px] h-[300px] z-20 flex flex-col items-center shadow-2xl border-white/40">
-           <div className="chrome-bar absolute -top-8 w-[106%] h-16 rounded-[40px] flex items-center justify-between px-10 z-30">
-              <div className="w-12 h-12 rounded-full bg-white border border-black/10 flex items-center justify-center shadow-lg">
+        <div className="typewriter-chassis relative mt-40 w-[460px] h-[300px] z-20 flex flex-col items-center shadow-2xl border-white/40 group">
+           <div className="chrome-bar absolute -top-8 w-[106%] h-16 rounded-[40px] flex items-center justify-between px-10 z-30 transition-all duration-700 group-hover:brightness-110">
+              <div className="w-12 h-12 rounded-full bg-white border border-black/10 flex items-center justify-center shadow-lg transition-transform duration-500 group-hover:rotate-12">
                  <div className="w-6 h-2 bg-black/5 rounded-full"></div>
               </div>
               <div className="w-full h-10 bg-gradient-to-b from-[#ccc] via-[#fff] to-[#aaa] mx-4 rounded-lg border border-black/5 shadow-inner"></div>
-              <div className="w-12 h-12 rounded-full bg-white border border-black/10 flex items-center justify-center shadow-lg">
+              <div className="w-12 h-12 rounded-full bg-white border border-black/10 flex items-center justify-center shadow-lg transition-transform duration-500 group-hover:-rotate-12">
                  <div className="w-6 h-2 bg-black/5 rounded-full"></div>
               </div>
            </div>
-           <div className="mt-16 bg-black/[0.03] border border-black/5 px-12 py-3 rounded-full shadow-inner">
+           <div className="mt-16 bg-black/[0.03] border border-black/5 px-12 py-3 rounded-full shadow-inner transition-all duration-500 group-hover:bg-black/[0.06]">
               <span className="font-industrial text-[12px] text-black/40 font-black tracking-[0.6em]">ELITE ARCHIVE PRO</span>
            </div>
            <div className="grid grid-cols-7 gap-4 mt-12 px-12">
               {Array(21).fill(0).map((_, i) => (
-                <div key={i} className="mechanical-key-ring w-8 h-8 flex items-center justify-center">
+                <div key={i} className="mechanical-key-ring w-8 h-8 flex items-center justify-center transition-transform duration-300 group-hover:scale-95">
                   <div className="mechanical-key-cap w-7 h-7 rounded-full">{String.fromCharCode(65 + (i % 26))}</div>
                 </div>
               ))}
            </div>
-           <div className="mechanical-key-ring w-72 h-7 mt-8 rounded-full flex items-center justify-center">
+           <div className="mechanical-key-ring w-72 h-7 mt-8 rounded-full flex items-center justify-center transition-transform duration-300 group-hover:scale-y-90">
               <div className="mechanical-key-cap w-full h-full rounded-full"></div>
            </div>
         </div>
@@ -160,7 +168,7 @@ const App: React.FC = () => {
     const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
     const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
     const days = [];
-    for (let i = 0; i < firstDayOfMonth; i++) days.push(<div key={`empty-${i}`} className="h-20 sm:h-28"></div>);
+    for (let i = 0; i < firstDayOfMonth; i++) days.push(<div key={`empty-${i}`} className="h-12 lg:h-16"></div>);
     for (let d = 1; d <= daysInMonth; d++) {
       const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
       const hasReview = !!history[dateKey];
@@ -168,63 +176,105 @@ const App: React.FC = () => {
       const isSelectable = hasReview || isToday;
       days.push(
         <button key={d} disabled={!isSelectable} onClick={() => startNewReview(dateKey)}
-          className={`h-20 sm:h-28 rounded-xl border-2 flex flex-col items-center justify-center transition-all duration-500 relative overflow-hidden ${hasReview ? 'border-[#8b947e] bg-[#8b947e]/5 text-[#333] shadow-sm' : isToday ? 'border-[#333] bg-white text-[#333] shadow-md ring-1 ring-black/5' : 'border-black/5 bg-white/30 text-gray-300 cursor-default opacity-40'}`}
+          className={`h-12 lg:h-16 rounded-lg border flex flex-col items-center justify-center transition-all duration-500 relative overflow-hidden group/day ${
+            hasReview 
+              ? 'border-[#8b947e] bg-[#8b947e]/5 text-[#333] shadow-sm hover:scale-110 hover:shadow-md hover:bg-[#8b947e]/10' 
+              : isToday 
+                ? 'border-[#333] bg-white text-[#333] shadow-md ring-1 ring-black/5 hover:scale-110 hover:shadow-xl hover:z-20' 
+                : 'border-black/5 bg-white/30 text-gray-300 cursor-default opacity-40'
+          }`}
         >
-          <span className="font-industrial text-2xl font-black">{d}</span>
-          {hasReview && <div className="text-[9px] font-industrial mt-1 text-[#8b947e] font-bold">ARCHIVED</div>}
-          {isToday && !hasReview && <div className="text-[9px] font-industrial mt-1 text-gray-400 font-bold">LIVE</div>}
+          <span className="font-industrial text-lg lg:text-xl font-black group-hover/day:scale-110 transition-transform">{d}</span>
+          {hasReview && <div className="text-[7px] font-industrial mt-0.5 text-[#8b947e] font-bold opacity-60 group-hover/day:opacity-100">REEL</div>}
+          {isToday && !hasReview && <div className="text-[7px] font-industrial mt-0.5 text-gray-400 font-bold animate-pulse">LIVE</div>}
         </button>
       );
     }
 
     return (
-      <div className="max-w-3xl mx-auto space-y-12 page-transition relative pt-16 pb-32 px-6">
-        <div className="watermark top-20 -left-20 text-[180px]">TIMELINE</div>
-        <header className="text-center space-y-4 py-12 relative">
-          <div className="font-industrial text-7xl font-black text-[#333] tracking-tighter leading-none mb-4">STUDIO REEL</div>
-          <div className="text-[11px] font-industrial text-[#8b947e] flex items-center justify-center gap-6 font-bold tracking-[0.3em]">
-            <span>MONTHLY CATALOGUE</span>
-            <div className="w-1.5 h-1.5 bg-[#8b947e]/30 rounded-full"></div>
-            <span>{currentYear} / {String(currentMonth + 1).padStart(2, '0')}</span>
+      <div className="max-w-6xl mx-auto h-screen flex flex-col lg:overflow-hidden pt-4 pb-8 px-6 page-transition relative">
+        <div className="watermark top-10 right-10 text-[120px] pointer-events-none">STUDIO</div>
+        
+        <header className="flex justify-between items-end mb-6 shrink-0">
+          <div className="space-y-1">
+            <h1 className="font-industrial text-5xl font-black text-[#333] tracking-tighter leading-none hover:tracking-[-0.05em] transition-all duration-700 cursor-default">STUDIO REEL</h1>
+            <div className="text-[10px] font-industrial text-[#8b947e] flex items-center gap-4 font-bold tracking-[0.3em]">
+              <span>CATALOGUE</span>
+              <div className="w-1 h-1 bg-[#8b947e]/30 rounded-full"></div>
+              <span>{currentYear} / {String(currentMonth + 1).padStart(2, '0')}</span>
+            </div>
           </div>
+          <button onClick={() => setView('home')} className="font-industrial text-[10px] text-gray-400 font-bold tracking-[0.4em] hover:text-[#333] hover:scale-110 transition-all mb-2">EXIT</button>
         </header>
-        <div className="space-y-6">
-          <button onClick={() => startNewReview()} className="w-full kuddo-card rounded-3xl p-10 flex items-center justify-between group transition-all duration-500 hover:bg-[#333] hover:text-white border-2 border-dashed border-[#8b947e]/20 hover:border-[#333] hover:shadow-2xl">
-            <div className="text-left">
-              <div className="font-industrial text-3xl font-black leading-tight mb-2">NEW SCREENPLAY</div>
-              <div className="text-[11px] font-industrial opacity-50 group-hover:opacity-100 tracking-[0.2em] font-bold uppercase">PROD DATE: {todayKey}</div>
+
+        <div className="flex flex-col lg:flex-row gap-6 flex-1 lg:min-h-0">
+          {/* 左侧：操作与状态栏 */}
+          <div className="lg:w-1/3 flex flex-col gap-6 shrink-0">
+            <button 
+              onClick={() => startNewReview()} 
+              className="w-full kuddo-card rounded-[32px] p-8 flex flex-col justify-between group transition-all duration-500 hover:bg-[#333] hover:text-white border-2 border-dashed border-[#8b947e]/20 hover:border-[#333] hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] hover:-translate-y-2 h-48 overflow-hidden relative"
+            >
+              <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 -rotate-12 translate-x-full group-hover:-translate-x-full pointer-events-none"></div>
+              <div className="space-y-1 relative z-10">
+                <div className="font-industrial text-2xl font-black leading-tight group-hover:tracking-wider transition-all duration-500">NEW SCREENPLAY</div>
+                <div className="text-[9px] font-industrial opacity-50 group-hover:opacity-100 tracking-[0.2em] font-bold uppercase">PROD DATE: {todayKey}</div>
+              </div>
+              <div className="flex justify-end relative z-10">
+                <div className="w-12 h-12 bg-[#8b947e]/10 group-hover:bg-white/10 rounded-full flex items-center justify-center transition-all duration-500 group-hover:rotate-90 group-hover:scale-125">
+                  <i className="fas fa-plus text-xl"></i>
+                </div>
+              </div>
+            </button>
+
+            <div className="flex-1 flex flex-col gap-6">
+              <div className="kuddo-card rounded-[32px] p-6 flex items-center justify-between shadow-sm border-l-4 border-l-[#8b947e]/20 transition-all duration-500 hover:shadow-lg hover:-translate-y-1 hover:border-l-[#8b947e] group">
+                <div>
+                  <div className="font-industrial text-[9px] text-gray-400 font-bold mb-1 tracking-[0.2em] group-hover:text-[#8b947e] transition-colors">SCRIPTS TOTAL</div>
+                  <div className="font-industrial text-4xl font-black group-hover:scale-110 transition-transform origin-left">{Object.keys(history).length}</div>
+                </div>
+                <i className="fas fa-film text-2xl text-[#8b947e]/20 group-hover:text-[#8b947e]/40 group-hover:rotate-12 transition-all"></i>
+              </div>
+              
+              <div className="kuddo-card rounded-[32px] p-6 flex items-center justify-between shadow-sm border-l-4 border-l-[#333]/10 transition-all duration-500 hover:shadow-lg hover:-translate-y-1 group">
+                <div className="flex-1">
+                  <div className="font-industrial text-[9px] text-gray-400 font-bold mb-1 tracking-[0.2em]">CURRENT STATUS</div>
+                  <div className="font-industrial text-lg font-black text-[#333] truncate pr-4 group-hover:text-[#8b947e] transition-colors">
+                    {hasTodayReview ? "COMPLETED" : "RECORDING..."}
+                  </div>
+                </div>
+                <div className={`w-3 h-3 rounded-full shadow-sm transition-all duration-1000 ${hasTodayReview ? 'bg-[#8b947e]' : 'bg-red-400 animate-pulse scale-125'}`}></div>
+              </div>
+
+              <div className="flex-1 kuddo-card rounded-[32px] p-6 bg-[#333]/5 border-2 border-white/50 flex flex-col justify-center text-center opacity-60 transition-all duration-500 hover:opacity-100 hover:bg-white hover:border-[#8b947e]/20 hover:shadow-md group">
+                 <div className="font-industrial text-[8px] tracking-[0.5em] text-[#8b947e] font-bold mb-2 group-hover:scale-110 transition-transform">PROD. NOTE</div>
+                 <p className="text-[10px] italic font-serif leading-relaxed text-[#333]/70 px-4 group-hover:text-[#333] transition-colors">"The best script is the one you live with intention."</p>
+              </div>
             </div>
-            <div className="w-20 h-20 bg-[#8b947e]/10 group-hover:bg-white/10 rounded-full flex items-center justify-center transition-all duration-500 group-hover:scale-110"><i className="fas fa-plus text-3xl"></i></div>
-          </button>
-        </div>
-        <div className="grid grid-cols-2 gap-6">
-          <div className="kuddo-card rounded-3xl p-8 flex items-center justify-between">
-            <div>
-              <div className="font-industrial text-[11px] text-gray-400 font-bold mb-2 tracking-[0.2em]">SCRIPTS TOTAL</div>
-              <div className="font-industrial text-4xl font-black">{Object.keys(history).length}</div>
+          </div>
+
+          {/* 右侧：日历日程表 */}
+          <div className="lg:w-2/3 kuddo-card rounded-[40px] p-6 lg:p-8 border-t-8 border-t-[#333] shadow-xl relative flex flex-col lg:min-h-0 transition-all duration-700 hover:shadow-2xl">
+            <div className="flex justify-between items-center mb-6 shrink-0">
+              <h2 className="font-industrial text-3xl font-black text-[#333] tracking-tighter hover:tracking-normal transition-all duration-500 cursor-default">
+                {currentMonth + 1}月 <span className="text-[#8b947e] mx-1 opacity-40">/</span> {currentYear}
+              </h2>
+              <div className="flex gap-2">
+                 <div className="w-2 h-2 rounded-full bg-red-400/20 hover:bg-red-400 transition-colors cursor-pointer"></div>
+                 <div className="w-2 h-2 rounded-full bg-blue-400/20 hover:bg-blue-400 transition-colors cursor-pointer"></div>
+                 <div className="w-2 h-2 rounded-full bg-[#8b947e]/20 hover:bg-[#8b947e] transition-colors cursor-pointer"></div>
+              </div>
             </div>
-            <i className="fas fa-box-open text-3xl text-[#8b947e]/30"></i>
-          </div>
-          <div className="kuddo-card rounded-3xl p-8 flex items-center justify-between">
-            <div>
-              <div className="font-industrial text-[11px] text-gray-400 font-bold mb-2 tracking-[0.2em]">CURRENT STATUS</div>
-              <div className="font-industrial text-sm font-black text-[#333]">{hasTodayReview ? "COMPLETED" : "RECORDING..."}</div>
+            
+            <div className="flex-1 lg:min-h-0 overflow-y-auto lg:overflow-visible">
+              <div className="grid grid-cols-7 gap-2 lg:gap-3">
+                {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(w => (
+                  <div key={w} className="text-center text-[9px] font-industrial text-gray-400 font-black pb-2 tracking-widest hover:text-[#333] transition-colors cursor-default">{w}</div>
+                ))}
+                {days}
+              </div>
             </div>
-            <i className={`fas fa-circle text-2xl transition-all duration-1000 ${hasTodayReview ? 'text-[#8b947e]' : 'text-red-400 animate-pulse'}`}></i>
           </div>
         </div>
-        <div className="kuddo-card rounded-[40px] p-12 space-y-10 pt-16 border-t-8 border-t-[#333] shadow-lg relative">
-          <div className="flex justify-between items-center border-b border-gray-100 pb-8">
-            <h2 className="font-industrial text-4xl font-black text-[#333] tracking-tighter">{currentMonth + 1}月 <span className="text-[#8b947e] mx-1 opacity-40">/</span> {currentYear}</h2>
-          </div>
-          <div className="grid grid-cols-7 gap-4">
-            {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(w => <div key={w} className="text-center text-[10px] font-industrial text-gray-400 font-black mb-4 tracking-widest">{w}</div>)}
-            {days}
-          </div>
-        </div>
-        <footer className="text-center py-16">
-          <button onClick={() => setView('home')} className="font-industrial text-[11px] text-gray-400 font-bold tracking-[0.5em] hover:text-[#333] transition-colors">EXIT TO MAIN REEL</button>
-        </footer>
       </div>
     );
   };
@@ -234,87 +284,125 @@ const App: React.FC = () => {
     const { state: s, report: r, date } = viewingReview;
     
     return (
-      <div className="max-w-3xl mx-auto space-y-12 page-transition pb-32 relative pt-16 px-6">
-        <header className="flex justify-between items-center py-10 border-b-2 border-[#333]/5">
-          <button onClick={() => setView('calendar')} className="font-industrial text-xs flex items-center gap-3 hover:opacity-100 opacity-40 transition-all font-bold group tracking-widest">
-            <i className="fas fa-chevron-left transition-transform group-hover:-translate-x-1"></i> BACK TO CATALOGUE
-          </button>
+      <div className="max-w-2xl mx-auto space-y-10 page-transition pb-24 relative pt-12 px-6">
+        <header className="flex justify-between items-center py-6 border-b border-[#333]/5">
+          <div className="flex items-center gap-6">
+            <button onClick={() => setView('calendar')} className="font-industrial text-[10px] flex items-center gap-2 hover:opacity-100 opacity-40 transition-all font-bold group tracking-widest hover:translate-x-[-4px]">
+              <i className="fas fa-chevron-left transition-transform group-hover:-translate-x-1"></i> BACK
+            </button>
+            <button onClick={handleRewrite} className="font-industrial text-[10px] flex items-center gap-2 hover:opacity-100 opacity-40 transition-all font-bold group tracking-widest text-[#8b947e] hover:scale-110">
+              <i className="fas fa-edit"></i> REWRITE
+            </button>
+          </div>
           <div className="text-right">
-            <div className="font-industrial text-4xl font-black leading-none text-[#333] tracking-tighter">{date}</div>
-            <div className="text-[10px] font-industrial text-[#8b947e] tracking-[0.3em] font-bold mt-3">RELEASE NO. {viewingReview.timestamp.toString().slice(-4)}</div>
+            <div className="font-industrial text-2xl font-black leading-none text-[#333] tracking-tighter">{date}</div>
           </div>
         </header>
 
-        <div className="vip-card-gradient rounded-[40px] p-12 text-[#333] shadow-2xl relative overflow-hidden group">
-          <div className="flex justify-between items-start mb-12">
-            <div className="space-y-2">
-              <div className="font-industrial text-[11px] font-bold opacity-40 tracking-[0.2em]">CLASSIFICATION</div>
-              <div className="font-industrial text-4xl font-black tracking-tighter uppercase">{r.genreTag}</div>
+        {/* 高端分级卡片风格：更紧凑的黑金/军绿限量版设计 */}
+        <div className="relative overflow-hidden rounded-[24px] bg-gradient-to-br from-[#2d3329] to-[#1a1f18] text-white shadow-2xl group border border-[#8b947e]/30 transition-all duration-700 hover:shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+          {/* 精致的背景纹理 */}
+          <div className="absolute top-0 right-0 w-48 h-48 bg-[#8b947e]/5 blur-[60px] rounded-full group-hover:scale-150 transition-transform duration-1000"></div>
+          
+          <div className="relative p-8 md:p-10 flex flex-col gap-10">
+            {/* 上部：标题与分级 */}
+            <div className="flex justify-between items-start">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                   <div className="w-1.5 h-1.5 bg-[#8b947e] rounded-full animate-pulse shadow-[0_0_8px_#8b947e]"></div>
+                   <div className="font-industrial text-[10px] font-bold text-[#8b947e] tracking-[0.4em] opacity-80 uppercase">Classification</div>
+                </div>
+                <div className="font-industrial text-4xl font-black tracking-tighter uppercase drop-shadow-md group-hover:tracking-wider transition-all duration-700 text-white/95">{r.genreTag}</div>
+              </div>
+              
+              <div className="text-right flex flex-col items-end pt-1">
+                <div className="font-industrial text-[8px] opacity-30 tracking-[0.4em] mb-1 uppercase font-bold">Prod. Grade</div>
+                <div className="flex gap-1.5 text-[#8b947e]">
+                   {Array(5).fill(0).map((_, i) => <i key={i} className="fas fa-star text-[9px] group-hover:scale-110 transition-transform" style={{ transitionDelay: `${i * 100}ms` }}></i>)}
+                </div>
+              </div>
             </div>
-          </div>
-          <div className="grid grid-cols-3 gap-10 border-t-2 border-[#333]/5 pt-12">
-            <div><div className="text-[11px] font-industrial font-bold opacity-40 mb-2 tracking-[0.2em]">NARRATIVE</div><div className="font-industrial text-4xl font-black">{r.stats.narrative}</div></div>
-            <div><div className="text-[11px] font-industrial font-bold opacity-40 mb-2 tracking-[0.2em]">CONTROL</div><div className="font-industrial text-4xl font-black">{r.stats.control}</div></div>
-            <div><div className="text-[11px] font-industrial font-bold opacity-40 mb-2 tracking-[0.2em]">INSIGHT</div><div className="font-industrial text-4xl font-black">{r.stats.insight}</div></div>
+
+            {/* 下部：数据指标 - 采用类似金融卡片的磁条/排版设计 */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 pt-8 border-t border-white/5 relative">
+              <div className="grid grid-cols-3 gap-10 md:gap-14">
+                <div className="transition-all duration-500 group-hover:translate-y-[-2px]">
+                  <div className="text-[9px] font-industrial font-bold text-[#8b947e]/60 mb-1.5 tracking-[0.2em]">NARRATIVE</div>
+                  <div className="font-industrial text-3xl font-black tracking-tighter text-white/90">{r.stats.narrative}</div>
+                </div>
+                
+                <div className="transition-all duration-500 group-hover:translate-y-[-2px]">
+                  <div className="text-[9px] font-industrial font-bold text-[#8b947e]/60 mb-1.5 tracking-[0.2em]">CONTROL</div>
+                  <div className="font-industrial text-3xl font-black tracking-tighter text-white/90">{r.stats.control}</div>
+                </div>
+                
+                <div className="transition-all duration-500 group-hover:translate-y-[-2px]">
+                  <div className="text-[9px] font-industrial font-bold text-[#8b947e]/60 mb-1.5 tracking-[0.2em]">INSIGHT</div>
+                  <div className="font-industrial text-3xl font-black tracking-tighter text-white/90">{r.stats.insight}</div>
+                </div>
+              </div>
+
+              {/* 卡片边角的微缩文字装饰 */}
+              <div className="flex flex-col items-end opacity-20 font-industrial text-[7px] tracking-[0.5em] font-bold pb-1">
+                 <div>AUTH: STUDIO EDITION</div>
+                 <div className="mt-1">SN: {date.replace(/-/g, '')}-REEL</div>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="space-y-12 relative">
-          <div className="absolute left-6 top-0 bottom-0 w-px bg-dashed border-l-2 border-gray-100 -z-10"></div>
-          
-          <div className="kuddo-card rounded-[32px] p-10 relative ml-8 shadow-sm">
-            <div className="absolute -left-9 top-10 w-4 h-4 bg-[#8b947e] rounded-full ring-4 ring-white"></div>
-            <h3 className="font-industrial text-[#8b947e] text-[11px] font-bold tracking-[0.4em] mb-10 uppercase opacity-60">ACT 01 // KEY FRAMES</h3>
-            <div className="space-y-6">
+        <div className="space-y-10 relative">
+          <div className="kuddo-card rounded-[28px] p-8 relative shadow-sm transition-all duration-500 hover:shadow-md hover:border-[#8b947e]/20 group">
+            <h3 className="font-industrial text-[#8b947e] text-[9px] font-bold tracking-[0.4em] mb-6 uppercase opacity-60 group-hover:opacity-100 transition-opacity">ACT 01 // KEY FRAMES</h3>
+            <div className="space-y-4">
               {[s.act1.high1, s.act1.high2, s.act1.high3].map((h, i) => h && (
-                <div key={i} className="flex gap-6 border-b border-gray-50 pb-6 last:border-0">
-                  <span className="font-industrial text-[#8b947e] font-black text-xl opacity-20">0{i+1}</span>
-                  <span className="text-lg font-medium leading-relaxed text-[#333]">{h}</span>
+                <div key={i} className="flex gap-4 border-b border-gray-50 pb-4 last:border-0 hover:translate-x-2 transition-transform duration-300">
+                  <span className="font-industrial text-[#8b947e] font-black text-sm opacity-20 group-hover:opacity-40 transition-opacity">0{i+1}</span>
+                  <span className="text-base font-medium leading-relaxed text-[#333] break-words flex-1">{h}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 ml-8">
-            <div className="kuddo-card rounded-[32px] p-10 relative shadow-sm border-t-4 border-t-red-100">
-              <h3 className="font-industrial text-red-400 text-[11px] font-bold tracking-[0.4em] mb-10 uppercase">ACT 02 // CONFLICT</h3>
-              <div className="space-y-8">
-                <div><div className="text-base leading-relaxed text-[#333]">{s.act2.fact}</div></div>
-                <div><div className="text-base italic opacity-70 leading-relaxed font-serif">{s.act2.notes}</div></div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="kuddo-card rounded-[28px] p-8 relative shadow-sm border-t-2 border-t-red-100 hover:shadow-md hover:-translate-y-1 transition-all duration-500">
+              <h3 className="font-industrial text-red-400 text-[9px] font-bold tracking-[0.4em] mb-6 uppercase">ACT 02 // CONFLICT</h3>
+              <div className="space-y-4">
+                <div className="text-sm leading-relaxed text-[#333] break-words">{s.act2.fact}</div>
+                <div className="text-sm italic opacity-70 leading-relaxed font-serif break-words border-l-2 border-red-50 pl-3">{s.act2.notes}</div>
               </div>
             </div>
-            <div className="kuddo-card rounded-[32px] p-10 relative shadow-sm border-t-4 border-t-orange-100">
-              <h3 className="font-industrial text-orange-400 text-[11px] font-bold tracking-[0.4em] mb-10 uppercase">ACT 03 // B-ROLL</h3>
-              <div className="text-lg italic leading-relaxed text-[#333] opacity-80 border-l-4 border-[#8b947e]/20 pl-6 bg-gray-50/30 py-6 rounded-r-2xl font-serif">"{s.act3.gratitude}"</div>
+            <div className="kuddo-card rounded-[28px] p-8 relative shadow-sm border-t-2 border-t-orange-100 hover:shadow-md hover:-translate-y-1 transition-all duration-500">
+              <h3 className="font-industrial text-orange-400 text-[9px] font-bold tracking-[0.4em] mb-6 uppercase">ACT 03 // B-ROLL</h3>
+              <div className="text-base italic leading-relaxed text-[#333] opacity-80 border-l-2 border-[#8b947e]/20 pl-4 font-serif break-words">"{s.act3.gratitude}"</div>
             </div>
           </div>
 
           {s.act4.entries && Object.keys(s.act4.entries).length > 0 && (
-            <div className="kuddo-card rounded-3xl p-10 ml-8 relative shadow-sm">
-              <div className="absolute -left-11 top-10 w-4 h-4 bg-blue-300 rounded-full ring-4 ring-white"></div>
-              <h3 className="font-industrial text-blue-400 text-[11px] font-bold tracking-[0.4em] mb-10 uppercase">ACT 04 // DIRECTOR'S COMMENTARY</h3>
-              <div className="space-y-10">
+            <div className="kuddo-card rounded-[28px] p-8 relative shadow-sm hover:border-blue-100 transition-all duration-500">
+              <h3 className="font-industrial text-blue-400 text-[9px] font-bold tracking-[0.4em] mb-6 uppercase">ACT 04 // DIRECTOR'S COMMENTARY</h3>
+              <div className="space-y-6">
                 {Object.entries(s.act4.entries).map(([idx, content]) => (
-                  <div key={idx} className="border-l-2 border-blue-50 pl-6">
-                    <div className="text-[10px] font-industrial text-blue-300 mb-2 font-bold tracking-widest">{DIRECTOR_TIPS[parseInt(idx)]?.title || "未知锦囊"}</div>
-                    <p className="text-lg leading-relaxed text-gray-700">{content}</p>
+                  <div key={idx} className="border-l border-blue-50 pl-4 hover:border-blue-400 transition-colors duration-500">
+                    <div className="text-[8px] font-industrial text-blue-300 mb-1 font-bold tracking-widest uppercase">{DIRECTOR_TIPS[parseInt(idx)]?.title || "NOTE"}</div>
+                    <p className="text-sm leading-relaxed text-gray-700 break-words">{content}</p>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          <div className="kuddo-card rounded-[48px] p-16 bg-[#333] text-white/90 ml-8 shadow-2xl relative border border-white/5">
-            <h2 className="font-industrial text-xl font-black mb-12 flex items-center gap-6">
-              <span className="w-1.5 h-6 bg-[#8b947e]"></span>
+          <div className="kuddo-card rounded-[36px] p-10 bg-[#333] text-white/90 shadow-2xl relative border border-white/5 transition-all duration-700 hover:shadow-[0_40px_100px_-20px_rgba(0,0,0,0.5)]">
+            <h2 className="font-industrial text-base font-black mb-8 flex items-center gap-4">
+              <span className="w-1 h-4 bg-[#8b947e] animate-pulse"></span>
               DIRECTOR'S CUT
             </h2>
-            <div className="text-xl font-serif italic leading-relaxed opacity-95 first-letter:text-5xl first-letter:font-industrial first-letter:mr-4 first-letter:float-left mb-16 tracking-wide">
-              {r.directorsCut || "镜头对准空无一人的片场，今日是一页白纸。没有高光与冲突，只有时间流逝的静默。这并非停滞，而是暴风雨前的宁静。主角站在幕后调整呼吸，准备在下一场戏重夺叙事权，打破这令人窒息的空白。"}
+            <div className="text-base font-serif italic leading-relaxed opacity-95 mb-10 tracking-wide break-words hover:opacity-100 transition-opacity">
+              {r.directorsCut}
             </div>
-            <div className="pt-12 border-t border-white/10">
-              <div className="font-industrial text-[11px] font-bold tracking-[0.4em] mb-10 text-[#8b947e] uppercase">SCRIPT NOTES // REVISION STRATEGY</div>
-              <div className="whitespace-pre-wrap opacity-80 text-lg leading-relaxed tracking-wide font-light">{r.scriptNotes}</div>
+            <div className="pt-8 border-t border-white/10">
+              <div className="font-industrial text-[9px] font-bold tracking-[0.4em] mb-6 text-[#8b947e] uppercase">SCRIPT NOTES</div>
+              <div className="whitespace-pre-wrap opacity-80 text-sm leading-relaxed tracking-wide font-light break-words hover:opacity-100 transition-opacity">{r.scriptNotes}</div>
             </div>
           </div>
         </div>
@@ -326,91 +414,147 @@ const App: React.FC = () => {
     const handlePrev = () => setCurrentStep(s => Math.max(0, s - 1));
     const handleNextStep = () => setCurrentStep(s => Math.min(5, s + 1));
     const currentAct = ACT_TITLES[currentStep] || { title: "", desc: "" };
-    const labelStyle = "font-industrial text-[16px] text-gray-800 font-black tracking-[0.2em] uppercase block mb-2";
-    const inputStyle = "w-full input-line py-5 text-xl font-bold placeholder:text-gray-400 text-[#333]";
-    const textareaStyle = "w-full input-line py-5 h-32 resize-none placeholder:text-gray-400 text-lg leading-relaxed text-[#333]";
+    const labelStyle = "font-industrial text-[12px] text-gray-800 font-black tracking-[0.2em] uppercase block mb-1";
+    const inputAreaStyle = "w-full input-line py-2 text-lg font-bold placeholder:text-gray-400 text-[#333] resize-none overflow-hidden min-h-[44px]";
+    const textareaStyle = "w-full input-line py-3 h-28 resize-none placeholder:text-gray-400 text-base leading-relaxed text-[#333]";
 
     if (currentStep === 5) {
       return (
-        <div className="max-w-2xl mx-auto flex flex-col items-center justify-center py-32 space-y-12 text-center page-transition">
-          <div className="w-40 h-40 border-8 border-[#8b947e]/20 border-t-[#8b947e] rounded-full flex items-center justify-center animate-spin duration-[3000ms]"><i className="fas fa-clapperboard text-5xl text-[#333]"></i></div>
-          <div className="space-y-6">
-            <h2 className="font-industrial text-5xl font-black text-[#333] tracking-tighter">终章：制片人终审报告</h2>
-            <p className="text-gray-700 font-industrial text-[14px] tracking-[0.3em] font-bold uppercase">提交后，AI将为你生成导演剪辑版叙事及职业点数</p>
-          </div>
-          <div className="flex flex-col items-center gap-6">
-            <button onClick={handleSubmit} disabled={isGenerating} className="kuddo-btn-primary px-20 py-6 rounded-full text-xl shadow-2xl active:scale-95 disabled:opacity-50 tracking-[0.3em] font-black">
-              {isGenerating ? "正在生成剧本..." : "确认提交剧本"}
-            </button>
-            <button onClick={handlePrev} disabled={isGenerating} className="font-industrial text-[12px] font-black opacity-40 hover:opacity-100 transition-all flex items-center gap-3 tracking-[0.3em] uppercase">
-              <i className="fas fa-chevron-left"></i> 回到上一幕
-            </button>
+        <div className="fixed inset-0 flex items-center justify-center z-[110] page-transition overflow-hidden bg-[#f2f0e9]">
+          <div className="absolute inset-0 pointer-events-none opacity-20" 
+               style={{ background: 'radial-gradient(circle at center, #8b947e 0%, transparent 70%)' }}></div>
+          
+          <div className="relative max-w-lg w-full flex flex-col items-center justify-center p-12 text-center space-y-12">
+            
+            <div className="relative group">
+              <div className="absolute inset-0 bg-[#8b947e]/10 blur-[80px] group-hover:bg-[#8b947e]/20 transition-all duration-1000"></div>
+              <div className="relative w-48 h-48 flex items-center justify-center">
+                <div className="absolute inset-0 border-[3px] border-dashed border-[#8b947e]/30 rounded-full animate-[spin_10s_linear_infinite]"></div>
+                <div className="absolute inset-4 border-[2px] border-solid border-[#333]/10 rounded-full animate-[spin_15s_linear_infinite_reverse]"></div>
+                
+                <div className={`w-32 h-32 bg-white rounded-full shadow-2xl flex items-center justify-center transition-all duration-500 ${isGenerating ? 'scale-90 opacity-80' : 'group-hover:scale-110'}`}>
+                  <div className={`relative ${isGenerating ? 'animate-bounce' : ''}`}>
+                    <i className={`fas fa-clapperboard text-5xl text-[#333] transition-colors ${isGenerating ? 'text-[#8b947e]' : ''}`}></i>
+                    {isGenerating && (
+                       <div className="absolute -top-2 -right-2 w-4 h-4 bg-[#8b947e] rounded-full animate-ping"></div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h2 className="font-industrial text-4xl md:text-5xl font-black text-[#333] tracking-tighter leading-tight whitespace-nowrap group-hover:tracking-tight transition-all duration-700">
+                终章：制片人终审报告
+              </h2>
+              <div className="h-0.5 w-16 bg-[#8b947e]/30 mx-auto rounded-full group-hover:w-32 transition-all duration-700"></div>
+              <p className="text-gray-500 font-industrial text-[12px] tracking-[0.4em] font-bold uppercase max-w-[280px] mx-auto leading-loose">
+                {isGenerating ? "正在后期剪辑中..." : "提交剧本，AI将为你生成导演剪辑版复盘"}
+              </p>
+            </div>
+
+            <div className="flex flex-col items-center gap-8 w-full">
+              <button 
+                onClick={handleSubmit} 
+                disabled={isGenerating} 
+                className={`relative overflow-hidden kuddo-btn-primary px-16 py-5 rounded-full text-base shadow-[0_20px_50px_rgba(0,0,0,0.1)] active:scale-95 disabled:opacity-50 tracking-[0.4em] font-black uppercase transition-all duration-500 group ${isGenerating ? 'bg-[#333]' : 'hover:shadow-[0_25px_60px_rgba(139,148,126,0.3)] hover:-translate-y-1'}`}
+              >
+                <span className="relative z-10 transition-all duration-500 group-hover:tracking-[0.6em]">{isGenerating ? "剪辑中 (ROLLING...)" : "确认发布剧本"}</span>
+                {!isGenerating && <div className="absolute inset-0 bg-white/10 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 skew-x-[30deg]"></div>}
+              </button>
+              
+              <button 
+                onClick={handlePrev} 
+                disabled={isGenerating} 
+                className="group relative flex items-center justify-center gap-3 py-4 px-8 rounded-xl transition-all hover:bg-black/5 active:scale-95"
+              >
+                <div className="flex items-center justify-center w-8 h-8 rounded-full border border-black/10 group-hover:border-[#8b947e] transition-colors">
+                  <i className="fas fa-chevron-left text-[12px] group-hover:text-[#8b947e] transition-colors group-hover:-translate-x-1 transition-transform"></i>
+                </div>
+                <span className="font-industrial text-sm font-black text-[#333] opacity-50 group-hover:opacity-100 group-hover:text-[#8b947e] tracking-[0.4em] transition-all uppercase">
+                  回到上一幕
+                </span>
+              </button>
+            </div>
+
+            <div className="absolute bottom-12 font-industrial text-[8px] opacity-10 tracking-[0.8em] font-bold">
+              SCREENWRITER STUDIO PREVIEW // V1.0
+            </div>
           </div>
         </div>
       );
     }
 
     return (
-      <div className="max-w-2xl mx-auto space-y-12 page-transition py-16 relative mt-16 px-6">
-        <header className="flex justify-between items-end border-b-4 border-[#333] pb-6 mb-12">
-          <div className="flex-1"><div className="font-industrial text-5xl font-black text-[#333] leading-none tracking-tighter">ACT 0{currentStep + 1}</div><span className="font-industrial text-[14px] text-[#8b947e] font-bold tracking-[0.4em] uppercase mt-4 block">{currentAct.title}</span></div>
-          <button onClick={() => setView('calendar')} className="text-gray-500 hover:text-black transition-all mb-2 p-3 hover:rotate-90"><i className="fas fa-times text-2xl"></i></button>
+      <div className="max-w-lg mx-auto space-y-8 page-transition py-12 relative mt-12 px-6">
+        <header className="flex justify-between items-end border-b-2 border-[#333] pb-4 mb-8">
+          <div className="flex-1">
+            <div className="font-industrial text-3xl font-black text-[#333] leading-none tracking-tighter hover:tracking-[-0.05em] transition-all duration-700">ACT 0{currentStep + 1}</div>
+            <span className="font-industrial text-[11px] text-[#8b947e] font-bold tracking-[0.3em] uppercase mt-2 block">{currentAct.title}</span>
+          </div>
+          <button onClick={() => setView('calendar')} className="text-gray-400 hover:text-black hover:scale-125 transition-all p-2"><i className="fas fa-times text-xl"></i></button>
         </header>
 
-        <div className="kuddo-card rounded-[40px] p-12 space-y-12 shadow-xl border-t-8 border-[#333] bg-white/80 backdrop-blur-sm">
-          <p className="text-lg font-bold text-[#333] leading-relaxed tracking-tight border-l-4 border-[#8b947e] pl-6 py-2 bg-[#8b947e]/5 rounded-r-xl">{currentAct.desc}</p>
+        <div className="kuddo-card rounded-[32px] p-8 space-y-8 shadow-lg border-t-4 border-[#333] bg-white/80 backdrop-blur-sm transition-all duration-500 hover:shadow-2xl">
+          <p className="text-base font-bold text-[#333] leading-relaxed tracking-tight border-l-2 border-[#8b947e] pl-4 py-1 bg-[#8b947e]/5 rounded-r-lg transition-all duration-500 hover:bg-[#8b947e]/10">{currentAct.desc}</p>
           
           {currentStep === 0 && (
-            <div className="space-y-16">
+            <div className="space-y-10">
               {[1, 2, 3].map(i => (
-                <div key={i} className="space-y-4">
-                  <label className={labelStyle}>高光 {i}</label>
-                  <input type="text" placeholder="输入名场面..." className={inputStyle} value={(state.act1 as any)[`high${i}`]} onChange={(e) => setState(s => ({ ...s, act1: { ...s.act1, [`high${i}`]: e.target.value } }))} />
+                <div key={i} className="space-y-2 group">
+                  <label className={`${labelStyle} group-focus-within:text-[#8b947e] transition-colors`}>高光 {i}</label>
+                  <textarea 
+                    placeholder="输入名场面..." 
+                    className={inputAreaStyle} 
+                    rows={2}
+                    value={(state.act1 as any)[`high${i}`]} 
+                    onChange={(e) => setState(s => ({ ...s, act1: { ...s.act1, [`high${i}`]: e.target.value } }))} 
+                  />
                 </div>
               ))}
             </div>
           )}
 
           {currentStep === 1 && (
-            <div className="space-y-16">
-              <div className="space-y-4">
-                <label className={labelStyle}>场记单</label><textarea className={textareaStyle} placeholder="焦虑或挫败的事实..." value={state.act2.fact} onChange={(e) => setState(s => ({ ...s, act2: { ...s.act2, fact: e.target.value } }))} />
+            <div className="space-y-10">
+              <div className="space-y-2 group">
+                <label className={`${labelStyle} group-focus-within:text-[#8b947e] transition-colors`}>场记单</label><textarea className={textareaStyle} placeholder="焦虑或挫败的事实..." value={state.act2.fact} onChange={(e) => setState(s => ({ ...s, act2: { ...s.act2, fact: e.target.value } }))} />
               </div>
-              <div className="space-y-4">
-                <label className={labelStyle}>编剧笔记</label><textarea className={`${textareaStyle} italic font-serif`} placeholder="外部冲突还是内部矛盾？" value={state.act2.notes} onChange={(e) => setState(s => ({ ...s, act2: { ...s.act2, notes: e.target.value } }))} />
+              <div className="space-y-2 group">
+                <label className={`${labelStyle} group-focus-within:text-[#8b947e] transition-colors`}>编剧笔记</label><textarea className={`${textareaStyle} italic font-serif`} placeholder="外部冲突还是内部矛盾？" value={state.act2.notes} onChange={(e) => setState(s => ({ ...s, act2: { ...s.act2, notes: e.target.value } }))} />
               </div>
             </div>
           )}
 
           {currentStep === 2 && (
-            <div className="space-y-4">
-              <label className={labelStyle}>素材</label><textarea className="w-full input-line py-5 h-64 resize-none text-3xl font-serif italic placeholder:text-gray-400 leading-relaxed text-[#333]" placeholder="记录令你感激的小事..." value={state.act3.gratitude} onChange={(e) => setState(s => ({ ...s, act3: { ...s.act3, gratitude: e.target.value } }))} />
+            <div className="space-y-2 group">
+              <label className={`${labelStyle} group-focus-within:text-[#8b947e] transition-colors`}>素材</label><textarea className="w-full input-line py-3 h-48 resize-none text-2xl font-serif italic placeholder:text-gray-400 leading-relaxed text-[#333]" placeholder="记录令你感激的小事..." value={state.act3.gratitude} onChange={(e) => setState(s => ({ ...s, act3: { ...s.act3, gratitude: e.target.value } }))} />
             </div>
           )}
 
           {currentStep === 3 && (
-            <div className="space-y-12">
-              <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-8">
+              <div className="grid grid-cols-2 gap-3">
                 {DIRECTOR_TIPS.map((tip, idx) => (
                   <button key={idx} onClick={() => {
                     const newEntries = { ...(state.act4.entries || {}) };
                     if (newEntries[idx] === undefined) newEntries[idx] = '';
                     else delete newEntries[idx];
                     setState(s => ({ ...s, act4: { entries: newEntries } }));
-                  }} className={`p-4 rounded-2xl border-2 text-left transition-all ${state.act4.entries && state.act4.entries[idx] !== undefined ? 'border-[#333] bg-[#333] text-white' : 'border-black/5 bg-gray-50/50'}`}>
-                    <div className="font-industrial text-[10px] font-black tracking-widest">{tip.title}</div>
+                  }} className={`p-3 rounded-xl border text-left transition-all duration-300 ${state.act4.entries && state.act4.entries[idx] !== undefined ? 'border-[#333] bg-[#333] text-white shadow-md scale-105' : 'border-black/5 bg-gray-50/50 hover:bg-black/5 hover:-translate-y-1'}`}>
+                    <div className="font-industrial text-[8px] font-black tracking-widest">{tip.title}</div>
                   </button>
                 ))}
               </div>
-              {(!state.act4.entries || Object.keys(state.act4.entries).length === 0) && <div className="text-center py-10 text-gray-400 font-industrial text-xs tracking-widest">请点击上方锦囊进行拆解（可多选）</div>}
-              <div className="space-y-12">
+              {(!state.act4.entries || Object.keys(state.act4.entries).length === 0) && <div className="text-center py-6 text-gray-400 font-industrial text-[9px] tracking-widest animate-pulse">请点击上方锦囊进行拆解</div>}
+              <div className="space-y-8">
                 {state.act4.entries && Object.keys(state.act4.entries).map((key) => {
                   const idx = parseInt(key);
                   return (
-                    <div key={idx} className="space-y-6 page-transition pt-8 border-t border-black/5">
-                      <div className="text-sm text-gray-700 italic border-l-4 border-[#8b947e] pl-6 bg-black/[0.02] py-4 rounded-r-xl">{DIRECTOR_TIPS[idx]?.description || ""}</div>
-                      <label className={labelStyle}>{DIRECTOR_TIPS[idx]?.title || "锦囊"} 剖析</label>
-                      <textarea className="w-full input-line py-5 h-40 resize-none placeholder:text-gray-400 text-lg font-medium leading-relaxed text-[#333]" placeholder="开始你的深度剖析..." value={state.act4.entries[idx]} onChange={(e) => {
+                    <div key={idx} className="space-y-4 page-transition pt-6 border-t border-black/5 group/entry">
+                      <div className="text-[11px] text-gray-600 italic border-l-2 border-[#8b947e] pl-4 bg-black/[0.01] py-3 rounded-r-lg group-hover/entry:bg-[#8b947e]/5 transition-colors">{DIRECTOR_TIPS[idx]?.description || ""}</div>
+                      <label className={`${labelStyle} group-focus-within/entry:text-[#8b947e]`}>{DIRECTOR_TIPS[idx]?.title || "剖析"}</label>
+                      <textarea className="w-full input-line py-3 h-32 resize-none placeholder:text-gray-400 text-base font-medium leading-relaxed text-[#333]" placeholder="开始你的深度剖析..." value={state.act4.entries[idx]} onChange={(e) => {
                         const newEntries = { ...state.act4.entries };
                         newEntries[idx] = e.target.value;
                         setState(s => ({ ...s, act4: { entries: newEntries } }));
@@ -423,26 +567,32 @@ const App: React.FC = () => {
           )}
 
           {currentStep === 4 && (
-            <div className="space-y-16">
+            <div className="space-y-10">
               {[1, 2, 3].map(i => (
-                <div key={i} className="space-y-4">
-                  <label className={labelStyle}>重头戏 {i}</label>
-                  <input type="text" placeholder="设定通关标准..." className={inputStyle} value={(state.act5 as any)[`goal${i}`]} onChange={(e) => setState(s => ({ ...s, act5: { ...s.act5, [`goal${i}`]: e.target.value } }))} />
+                <div key={i} className="space-y-2 group">
+                  <label className={`${labelStyle} group-focus-within:text-[#8b947e] transition-colors`}>重头戏 {i}</label>
+                  <textarea 
+                    placeholder="设定通关标准..." 
+                    className={inputAreaStyle} 
+                    rows={2}
+                    value={(state.act5 as any)[`goal${i}`]} 
+                    onChange={(e) => setState(s => ({ ...s, act5: { ...s.act5, [`goal${i}`]: e.target.value } }))} 
+                  />
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        <div className="flex justify-between items-center px-8 pt-10">
-          <button onClick={handlePrev} className={`font-industrial text-[12px] font-black opacity-50 hover:opacity-100 transition-all flex items-center gap-4 tracking-[0.3em] uppercase ${currentStep === 0 ? 'invisible' : ''}`}><i className="fas fa-chevron-left text-[12px]"></i> 上一幕</button>
-          <button onClick={handleNextStep} className="kuddo-btn-primary px-20 py-5 rounded-full shadow-2xl text-sm tracking-[0.3em] font-black">下一幕</button>
+        <div className="flex justify-between items-center px-4 pt-8">
+          <button onClick={handlePrev} className={`font-industrial text-[10px] font-black opacity-30 hover:opacity-100 transition-all flex items-center gap-3 tracking-[0.2em] uppercase hover:-translate-x-2 ${currentStep === 0 ? 'invisible' : ''}`}><i className="fas fa-chevron-left"></i> 上一幕</button>
+          <button onClick={handleNextStep} className="kuddo-btn-primary px-10 py-4 rounded-full shadow-lg text-xs tracking-[0.2em] font-black uppercase hover:shadow-2xl hover:-translate-y-1 active:translate-y-0 transition-all">下一幕</button>
         </div>
       </div>
     );
   };
 
-  return <div className="min-h-screen pt-4 sm:pt-12 pb-20 px-4 sm:px-6">{view === 'home' ? renderHome() : view === 'calendar' ? renderCalendar() : view === 'viewer' ? renderViewer() : renderEditor()}</div>;
+  return <div className="min-h-screen pt-4 sm:pt-8 pb-16 px-4 sm:px-6">{view === 'home' ? renderHome() : view === 'calendar' ? renderCalendar() : view === 'viewer' ? renderViewer() : renderEditor()}</div>;
 };
 
 export default App;
