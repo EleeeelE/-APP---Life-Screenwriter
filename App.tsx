@@ -3,7 +3,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   ScreenplayState, 
   FinalReport,
-  SavedReview 
+  SavedReview,
+  LoreItem
 } from './types.ts';
 import { 
   ACT_TITLES, 
@@ -13,32 +14,40 @@ import { generateFinalAudit } from './geminiService.ts';
 
 const DRAFT_KEY = 'life_screenwriter_draft_v1';
 const HISTORY_KEY = 'life_screenwriter_history_v1';
+const VIEW_KEY = 'life_screenwriter_current_view_v1';
+const STEP_KEY = 'life_screenwriter_current_step_v1';
+const VIEWING_DATE_KEY = 'life_screenwriter_viewing_date_v1';
 
 const DEFAULT_STATE: ScreenplayState = {
   act1: { high1: '', high2: '', high3: '' },
   act2: { fact: '', notes: '' },
   act3: { gratitude: '' },
   act4: { entries: {} },
-  act5: { goal1: '', goal2: '', goal3: '' }
+  act5: { goal1: '', goal2: '', goal3: '' },
+  act6: { items: [] }
 };
 
 const App: React.FC = () => {
-  const [view, setView] = useState<'home' | 'calendar' | 'editor' | 'viewer'>('home');
+  const [view, setView] = useState<'home' | 'calendar' | 'editor' | 'viewer' | 'archive'>('home');
   const [currentStep, setCurrentStep] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
   const [history, setHistory] = useState<Record<string, SavedReview>>({});
   const [viewingReview, setViewingReview] = useState<SavedReview | null>(null);
+  const [archiveTab, setArchiveTab] = useState<'quote' | 'principle'>('quote');
 
   const [state, setState] = useState<ScreenplayState>(DEFAULT_STATE);
 
   const todayKey = new Date().toISOString().split('T')[0];
   const hasTodayReview = !!history[todayKey];
 
+  // 初始化加载数据
   useEffect(() => {
     const savedHistory = localStorage.getItem(HISTORY_KEY);
+    let parsedHistory: Record<string, SavedReview> = {};
     if (savedHistory) {
       try {
-        setHistory(JSON.parse(savedHistory));
+        parsedHistory = JSON.parse(savedHistory);
+        setHistory(parsedHistory);
       } catch (e) {
         console.error("Failed to load history", e);
       }
@@ -51,30 +60,55 @@ const App: React.FC = () => {
         setState(prev => ({
           ...DEFAULT_STATE,
           ...parsedDraft,
-          act1: { ...DEFAULT_STATE.act1, ...(parsedDraft.act1 || {}) },
-          act2: { ...DEFAULT_STATE.act2, ...(parsedDraft.act2 || {}) },
-          act3: { ...DEFAULT_STATE.act3, ...(parsedDraft.act3 || {}) },
-          act4: { ...DEFAULT_STATE.act4, ...(parsedDraft.act4 || {}) },
-          act5: { ...DEFAULT_STATE.act5, ...(parsedDraft.act5 || {}) },
         }));
       } catch (e) {
         console.warn("Draft recovery failed, using default state", e);
       }
     }
+
+    // 恢复导航状态
+    const savedView = localStorage.getItem(VIEW_KEY) as any;
+    const savedStep = localStorage.getItem(STEP_KEY);
+    const savedViewingDate = localStorage.getItem(VIEWING_DATE_KEY);
+
+    if (savedView && ['home', 'calendar', 'editor', 'viewer', 'archive'].includes(savedView)) {
+      setView(savedView);
+      if (savedStep) setCurrentStep(parseInt(savedStep));
+      if (savedView === 'viewer' && savedViewingDate && parsedHistory[savedViewingDate]) {
+        setViewingReview(parsedHistory[savedViewingDate]);
+      } else if (savedView === 'viewer' && !savedViewingDate) {
+        setView('calendar');
+      }
+    }
   }, []);
+
+  // 持久化导航状态
+  useEffect(() => {
+    localStorage.setItem(VIEW_KEY, view);
+  }, [view]);
+
+  useEffect(() => {
+    localStorage.setItem(STEP_KEY, currentStep.toString());
+  }, [currentStep]);
+
+  useEffect(() => {
+    if (viewingReview) {
+      localStorage.setItem(VIEWING_DATE_KEY, viewingReview.date);
+    } else {
+      localStorage.removeItem(VIEWING_DATE_KEY);
+    }
+  }, [viewingReview]);
 
   useEffect(() => {
     localStorage.setItem(DRAFT_KEY, JSON.stringify(state));
   }, [state]);
 
-  // 自动调整高度的函数
   const handleAutoResize = (e: React.ChangeEvent<HTMLTextAreaElement> | React.UIEvent<HTMLTextAreaElement>) => {
     const target = e.target as HTMLTextAreaElement;
     target.style.height = 'auto';
     target.style.height = `${target.scrollHeight}px`;
   };
 
-  // 渲染后立即调整所有可见 textarea 的高度（处理重写或载入草稿时的情况）
   useEffect(() => {
     if (view === 'editor') {
       const textareas = document.querySelectorAll('textarea');
@@ -83,7 +117,7 @@ const App: React.FC = () => {
         ta.style.height = `${ta.scrollHeight}px`;
       });
     }
-  }, [view, currentStep, state.act4.entries]);
+  }, [view, currentStep, state.act4.entries, state.act6.items]);
 
   const saveToHistory = (report: FinalReport) => {
     const dateKey = new Date().toISOString().split('T')[0];
@@ -132,6 +166,20 @@ const App: React.FC = () => {
       setView('editor');
       setCurrentStep(0);
     }
+  };
+
+  const getAllArchiveItems = (type: 'quote' | 'principle') => {
+    const items: Array<{text: string, date: string}> = [];
+    Object.entries(history).forEach(([date, review]) => {
+      if (review.state.act6?.items) {
+        review.state.act6.items.forEach(item => {
+          if (item.type === type) {
+            items.push({ text: item.text, date });
+          }
+        });
+      }
+    });
+    return items.sort((a, b) => b.date.localeCompare(a.date));
   };
 
   const renderHome = () => (
@@ -226,7 +274,6 @@ const App: React.FC = () => {
         </header>
 
         <div className="flex flex-col lg:flex-row gap-6 flex-1 lg:min-h-0">
-          {/* 左侧：操作与状态栏 */}
           <div className="lg:w-1/3 flex flex-col gap-6 shrink-0">
             <button 
               onClick={() => startNewReview()} 
@@ -245,14 +292,17 @@ const App: React.FC = () => {
             </button>
 
             <div className="flex-1 flex flex-col gap-6">
-              <div className="kuddo-card rounded-[32px] p-6 flex items-center justify-between shadow-sm border-l-4 border-l-[#8b947e]/20 transition-all duration-500 hover:shadow-lg hover:-translate-y-1 hover:border-l-[#8b947e] group">
+              <button 
+                onClick={() => setView('archive')}
+                className="w-full kuddo-card rounded-[32px] p-6 flex items-center justify-between shadow-sm border-l-4 border-l-[#8b947e] transition-all duration-500 hover:shadow-lg hover:-translate-y-1 group bg-white"
+              >
                 <div>
-                  <div className="font-industrial text-[9px] text-gray-400 font-bold mb-1 tracking-[0.2em] group-hover:text-[#8b947e] transition-colors">SCRIPTS TOTAL</div>
-                  <div className="font-industrial text-4xl font-black group-hover:scale-110 transition-transform origin-left">{Object.keys(history).length}</div>
+                  <div className="font-industrial text-[9px] text-gray-400 font-bold mb-1 tracking-[0.2em] group-hover:text-[#8b947e] transition-colors">CREATIVE ARCHIVE</div>
+                  <div className="font-industrial text-xl font-black group-hover:tracking-widest transition-all">创作素材库</div>
                 </div>
-                <i className="fas fa-film text-2xl text-[#8b947e]/20 group-hover:text-[#8b947e]/40 group-hover:rotate-12 transition-all"></i>
-              </div>
-              
+                <i className="fas fa-bookmark text-2xl text-[#8b947e] opacity-40 group-hover:rotate-12 transition-all"></i>
+              </button>
+
               <div className="kuddo-card rounded-[32px] p-6 flex items-center justify-between shadow-sm border-l-4 border-l-[#333]/10 transition-all duration-500 hover:shadow-lg hover:-translate-y-1 group">
                 <div className="flex-1">
                   <div className="font-industrial text-[9px] text-gray-400 font-bold mb-1 tracking-[0.2em]">CURRENT STATUS</div>
@@ -270,7 +320,6 @@ const App: React.FC = () => {
             </div>
           </div>
 
-          {/* 右侧：日历日程表 */}
           <div className="lg:w-2/3 kuddo-card rounded-[40px] p-6 lg:p-8 border-t-8 border-t-[#333] shadow-xl relative flex flex-col lg:min-h-0 transition-all duration-700 hover:shadow-2xl">
             <div className="flex justify-between items-center mb-6 shrink-0">
               <h2 className="font-industrial text-3xl font-black text-[#333] tracking-tighter hover:tracking-normal transition-all duration-500 cursor-default">
@@ -297,6 +346,61 @@ const App: React.FC = () => {
     );
   };
 
+  const renderArchive = () => {
+    const items = getAllArchiveItems(archiveTab);
+    return (
+      <div className="max-w-3xl mx-auto h-screen flex flex-col pt-12 pb-24 px-6 page-transition relative">
+        <header className="flex justify-between items-center mb-10 shrink-0">
+          <div className="space-y-1">
+            <button 
+              onClick={() => setView('calendar')}
+              className="font-industrial text-[10px] text-gray-400 hover:text-[#333] flex items-center gap-2 mb-2 transition-all font-bold tracking-[0.3em] group"
+            >
+              <i className="fas fa-chevron-left group-hover:-translate-x-1 transition-transform"></i> BACK TO STUDIO
+            </button>
+            <h1 className="font-industrial text-5xl font-black text-[#333] tracking-tighter">CREATIVE ARCHIVE</h1>
+          </div>
+        </header>
+
+        <div className="flex gap-8 mb-8 shrink-0">
+          <button 
+            onClick={() => setArchiveTab('quote')}
+            className={`font-industrial text-xs tracking-[0.3em] font-black pb-2 border-b-2 transition-all ${archiveTab === 'quote' ? 'border-[#8b947e] text-[#333]' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
+          >
+            GOLDEN QUOTES // 金句
+          </button>
+          <button 
+            onClick={() => setArchiveTab('principle')}
+            className={`font-industrial text-xs tracking-[0.3em] font-black pb-2 border-b-2 transition-all ${archiveTab === 'principle' ? 'border-[#8b947e] text-[#333]' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
+          >
+            CORE PRINCIPLES // 原则
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto space-y-6 pr-2">
+          {items.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center opacity-20 space-y-4">
+              <i className={`fas ${archiveTab === 'quote' ? 'fa-quote-left' : 'fa-scroll'} text-6xl`}></i>
+              <p className="font-industrial tracking-[0.2em] font-bold">EMPTY ARCHIVE</p>
+            </div>
+          ) : (
+            items.map((item, i) => (
+              <div key={i} className="kuddo-card rounded-2xl p-6 border-l-4 border-l-[#8b947e]/20 hover:border-l-[#8b947e] transition-all group">
+                <div className="flex justify-between items-start mb-3">
+                  <span className="font-industrial text-[8px] text-gray-400 font-bold tracking-[0.3em]">{item.date}</span>
+                  <i className={`fas ${archiveTab === 'quote' ? 'fa-quote-right' : 'fa-bookmark'} text-[10px] text-[#8b947e]/30 group-hover:scale-125 transition-transform`}></i>
+                </div>
+                <p className={`text-lg leading-relaxed text-[#333] ${archiveTab === 'quote' ? 'font-serif italic' : 'font-bold'}`}>
+                  {item.text}
+                </p>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const renderViewer = () => {
     if (!viewingReview) return null;
     const { state: s, report: r, date } = viewingReview;
@@ -317,7 +421,6 @@ const App: React.FC = () => {
           </div>
         </header>
 
-        {/* 高端分级卡片风格 */}
         <div className="relative overflow-hidden rounded-[24px] bg-gradient-to-br from-[#2d3329] to-[#1a1f18] text-white shadow-2xl group border border-[#8b947e]/30 transition-all duration-700 hover:shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
           <div className="absolute top-0 right-0 w-48 h-48 bg-[#8b947e]/5 blur-[60px] rounded-full group-hover:scale-150 transition-transform duration-1000"></div>
           
@@ -366,6 +469,21 @@ const App: React.FC = () => {
         </div>
 
         <div className="space-y-10 relative">
+          {/* 金句与原则显示模块 */}
+          {s.act6?.items && s.act6.items.length > 0 && (
+            <div className="kuddo-card rounded-[28px] p-8 relative shadow-sm hover:border-[#8b947e]/20 transition-all">
+              <h3 className="font-industrial text-[#8b947e] text-[9px] font-bold tracking-[0.4em] mb-6 uppercase">ACT 06 // LORE & ARCHIVES</h3>
+              <div className="space-y-4">
+                {s.act6.items.map((item, i) => (
+                  <div key={i} className={`p-4 rounded-xl ${item.type === 'quote' ? 'bg-[#f2f0e9]/40 border-l-2 border-[#8b947e]/40' : 'bg-gray-50/60 border-l-2 border-gray-300'}`}>
+                    <div className="font-industrial text-[7px] font-bold mb-1 opacity-40 uppercase">{item.type === 'quote' ? 'GOLDEN QUOTE' : 'CORE PRINCIPLE'}</div>
+                    <p className={`text-base leading-relaxed text-[#333] ${item.type === 'quote' ? 'font-serif italic' : 'font-medium'}`}>{item.text}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="kuddo-card rounded-[28px] p-8 relative shadow-sm transition-all duration-500 hover:shadow-md hover:border-[#8b947e]/20 group">
             <h3 className="font-industrial text-[#8b947e] text-[9px] font-bold tracking-[0.4em] mb-6 uppercase opacity-60 group-hover:opacity-100 transition-opacity">ACT 01 // KEY FRAMES</h3>
             <div className="space-y-4">
@@ -426,21 +544,43 @@ const App: React.FC = () => {
 
   const renderEditor = () => {
     const handlePrev = () => setCurrentStep(s => Math.max(0, s - 1));
-    const handleNextStep = () => setCurrentStep(s => Math.min(5, s + 1));
+    const handleNextStep = () => setCurrentStep(s => Math.min(6, s + 1));
     const currentAct = ACT_TITLES[currentStep] || { title: "", desc: "" };
     const labelStyle = "font-industrial text-[12px] text-gray-800 font-black tracking-[0.2em] uppercase block mb-1";
     
-    // 输入框样式：确保高度自动撑开且滚动条不可见
     const inputAreaStyle = "w-full input-line py-2 text-lg font-bold placeholder:text-gray-400 text-[#333] resize-none min-h-[44px] h-auto overflow-hidden";
     const textareaStyle = "w-full input-line py-3 resize-none placeholder:text-gray-400 text-base leading-relaxed text-[#333] min-h-[112px] h-auto overflow-hidden";
 
-    if (currentStep === 5) {
+    // 幕跳转横幅
+    const renderActNav = () => (
+      <div className="flex justify-center items-center gap-1.5 mb-8 p-3 bg-white/50 backdrop-blur-md rounded-2xl shadow-inner border border-black/5 overflow-x-auto">
+        {[0, 1, 2, 3, 4, 5, 6].map(i => {
+          const isActive = currentStep === i;
+          return (
+            <button 
+              key={i} 
+              onClick={() => setCurrentStep(i)}
+              className={`min-w-[40px] h-10 flex items-center justify-center rounded-xl font-industrial text-xs font-black transition-all duration-300 ${
+                isActive 
+                  ? 'bg-[#8b947e] text-white shadow-lg scale-110' 
+                  : 'text-gray-400 hover:text-[#333] hover:bg-black/5'
+              }`}
+            >
+              {i === 6 ? <i className="fas fa-clapperboard"></i> : (i + 1)}
+            </button>
+          );
+        })}
+      </div>
+    );
+
+    if (currentStep === 6) {
       return (
-        <div className="fixed inset-0 flex items-center justify-center z-[110] page-transition overflow-hidden bg-[#f2f0e9]">
+        <div className="fixed inset-0 flex flex-col items-center justify-center z-[110] page-transition overflow-hidden bg-[#f2f0e9]">
           <div className="absolute inset-0 pointer-events-none opacity-20" 
                style={{ background: 'radial-gradient(circle at center, #8b947e 0%, transparent 70%)' }}></div>
           
-          <div className="relative max-w-lg w-full flex flex-col items-center justify-center p-12 text-center space-y-12">
+          <div className="relative max-w-lg w-full flex flex-col items-center justify-center p-12 text-center space-y-12 pb-24">
+            {renderActNav()}
             
             <div className="relative group">
               <div className="absolute inset-0 bg-[#8b947e]/10 blur-[80px] group-hover:bg-[#8b947e]/20 transition-all duration-1000"></div>
@@ -465,11 +605,16 @@ const App: React.FC = () => {
               </h2>
               <div className="h-0.5 w-16 bg-[#8b947e]/30 mx-auto rounded-full group-hover:w-32 transition-all duration-700"></div>
               <p className="text-gray-500 font-industrial text-[12px] tracking-[0.4em] font-bold uppercase max-w-[280px] mx-auto leading-loose">
-                {isGenerating ? "正在后期剪辑中..." : "提交剧本，AI将为你生成导演剪辑版复盘"}
+                {isGenerating ? "正在后期剪辑中..." : (
+                  <>
+                    提交剧本，<br />
+                    AI将为你生成导演剪辑版复盘
+                  </>
+                )}
               </p>
             </div>
 
-            <div className="flex flex-col items-center gap-8 w-full">
+            <div className="flex flex-col items-center gap-8 w-full mb-8">
               <button 
                 onClick={handleSubmit} 
                 disabled={isGenerating} 
@@ -493,7 +638,7 @@ const App: React.FC = () => {
               </button>
             </div>
 
-            <div className="absolute bottom-12 font-industrial text-[8px] opacity-10 tracking-[0.8em] font-bold">
+            <div className="absolute bottom-8 font-industrial text-[8px] opacity-10 tracking-[0.8em] font-bold pointer-events-none">
               SCREENWRITER STUDIO PREVIEW // V1.0
             </div>
           </div>
@@ -510,6 +655,8 @@ const App: React.FC = () => {
           </div>
           <button onClick={() => setView('calendar')} className="text-gray-400 hover:text-black hover:scale-125 transition-all p-2"><i className="fas fa-times text-xl"></i></button>
         </header>
+
+        {renderActNav()}
 
         <div className="kuddo-card rounded-[32px] p-8 space-y-8 shadow-lg border-t-4 border-[#333] bg-white/80 backdrop-blur-sm transition-all duration-500 hover:shadow-2xl">
           <p className="text-base font-bold text-[#333] leading-relaxed tracking-tight border-l-2 border-[#8b947e] pl-4 py-1 bg-[#8b947e]/5 rounded-r-lg transition-all duration-500 hover:bg-[#8b947e]/10">{currentAct.desc}</p>
@@ -629,17 +776,94 @@ const App: React.FC = () => {
               ))}
             </div>
           )}
+
+          {currentStep === 5 && (
+            <div className="space-y-8">
+              <div className="space-y-6">
+                {state.act6.items.map((item, i) => (
+                  <div key={i} className="kuddo-card rounded-2xl p-6 border border-[#8b947e]/10 shadow-sm relative group/item">
+                    <div className="flex justify-between items-center mb-4">
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={() => {
+                            const newItems = [...state.act6.items];
+                            newItems[i].type = 'quote';
+                            setState(s => ({ ...s, act6: { items: newItems } }));
+                          }}
+                          className={`font-industrial text-[8px] font-black tracking-widest px-3 py-1 rounded-full transition-all ${item.type === 'quote' ? 'bg-[#8b947e] text-white' : 'bg-gray-100 text-gray-400'}`}
+                        >
+                          QUOTE / 金句
+                        </button>
+                        <button 
+                          onClick={() => {
+                            const newItems = [...state.act6.items];
+                            newItems[i].type = 'principle';
+                            setState(s => ({ ...s, act6: { items: newItems } }));
+                          }}
+                          className={`font-industrial text-[8px] font-black tracking-widest px-3 py-1 rounded-full transition-all ${item.type === 'principle' ? 'bg-[#333] text-white' : 'bg-gray-100 text-gray-400'}`}
+                        >
+                          PRINCIPLE / 原则
+                        </button>
+                      </div>
+                      <button 
+                        onClick={() => {
+                          const newItems = state.act6.items.filter((_, idx) => idx !== i);
+                          setState(s => ({ ...s, act6: { items: newItems } }));
+                        }}
+                        className="text-gray-300 hover:text-red-400 transition-colors opacity-0 group-hover/item:opacity-100"
+                      >
+                        <i className="fas fa-trash-alt text-xs"></i>
+                      </button>
+                    </div>
+                    <textarea 
+                      className={`w-full bg-transparent resize-none overflow-hidden placeholder:text-gray-300 text-lg leading-relaxed focus:outline-none ${item.type === 'quote' ? 'font-serif italic' : 'font-bold'}`}
+                      placeholder={item.type === 'quote' ? "记录打动人心的金句..." : "总结值得恪守的原则..."}
+                      value={item.text}
+                      onInput={handleAutoResize}
+                      onChange={(e) => {
+                        const newItems = [...state.act6.items];
+                        newItems[i].text = e.target.value;
+                        setState(s => ({ ...s, act6: { items: newItems } }));
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <button 
+                onClick={() => {
+                  setState(s => ({
+                    ...s,
+                    act6: {
+                      items: [...(s.act6?.items || []), { text: '', type: 'quote' }]
+                    }
+                  }));
+                }}
+                className="w-full py-6 border-2 border-dashed border-[#8b947e]/20 rounded-2xl flex items-center justify-center gap-3 text-gray-400 hover:border-[#8b947e]/40 hover:text-[#8b947e] hover:bg-[#8b947e]/5 transition-all group"
+              >
+                <i className="fas fa-plus-circle transition-transform group-hover:rotate-90"></i>
+                <span className="font-industrial text-[10px] font-black tracking-widest">ADD NEW ENTRY</span>
+              </button>
+            </div>
+          )}
         </div>
 
-        <div className="flex justify-between items-center px-4 pt-8">
+        <div className="flex justify-between items-center px-4 pt-8 pb-12">
           <button onClick={handlePrev} className={`font-industrial text-[10px] font-black opacity-30 hover:opacity-100 transition-all flex items-center gap-3 tracking-[0.2em] uppercase hover:-translate-x-2 ${currentStep === 0 ? 'invisible' : ''}`}><i className="fas fa-chevron-left"></i> 上一幕</button>
-          <button onClick={handleNextStep} className="kuddo-btn-primary px-10 py-4 rounded-full shadow-lg text-xs tracking-[0.2em] font-black uppercase hover:shadow-2xl hover:-translate-y-1 active:translate-y-0 transition-all">下一幕</button>
+          <button onClick={handleNextStep} className={`kuddo-btn-primary px-10 py-4 rounded-full shadow-lg text-xs tracking-[0.2em] font-black uppercase hover:shadow-2xl hover:-translate-y-1 active:translate-y-0 transition-all ${currentStep === 6 ? 'invisible' : ''}`}>下一幕</button>
         </div>
       </div>
     );
   };
 
-  return <div className="min-h-screen pt-4 sm:pt-8 pb-16 px-4 sm:px-6">{view === 'home' ? renderHome() : view === 'calendar' ? renderCalendar() : view === 'viewer' ? renderViewer() : renderEditor()}</div>;
+  return (
+    <div className="min-h-screen pt-4 sm:pt-8 pb-16 px-4 sm:px-6">
+      {view === 'home' ? renderHome() : 
+       view === 'calendar' ? renderCalendar() : 
+       view === 'archive' ? renderArchive() :
+       view === 'viewer' ? renderViewer() : renderEditor()}
+    </div>
+  );
 };
 
 export default App;

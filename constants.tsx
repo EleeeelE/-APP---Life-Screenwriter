@@ -21,6 +21,10 @@ export const ACT_TITLES = [
   {
     title: "第五幕：明日拍摄通告 (Tomorrow’s Call Sheet)",
     desc: "明确明天最重要的三项目标，作为明天的通关标准。"
+  },
+  {
+    title: "第六幕：灵感存档 (The Vault)",
+    desc: "记录今天打动你的金句或领悟出的原则。这些将成为你人生剧作库的宝贵资产。"
   }
 ];
 

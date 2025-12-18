@@ -25,6 +25,15 @@ export interface Act5Data {
   goal3: string;
 }
 
+export interface LoreItem {
+  text: string;
+  type: 'quote' | 'principle';
+}
+
+export interface Act6Data {
+  items: LoreItem[];
+}
+
 export interface FinalReport {
   directorsCut: string;
   scriptNotes: string;
@@ -42,6 +51,7 @@ export interface ScreenplayState {
   act3: Act3Data;
   act4: Act4Data;
   act5: Act5Data;
+  act6: Act6Data;
 }
 
 export interface SavedReview {
