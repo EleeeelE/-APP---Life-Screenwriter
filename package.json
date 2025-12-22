@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+<<<<<<< HEAD
     "@google/genai": "^1.34.0",
     "clsx": "^2.1.1",
     "lucide-react": "^0.562.0",
@@ -17,6 +18,11 @@
     "react-router-dom": "^7.11.0",
     "tailwind-merge": "^3.4.0",
     "zustand": "^5.0.9"
+=======
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "@google/genai": "^1.34.0"
+>>>>>>> 099500dc21a64625d94bee2235c741ad95fd877a
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
